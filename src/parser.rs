@@ -57,13 +57,13 @@ pub fn parse_iter(
             );
             v
         }
-        v => panic!("invalid token 1 {:?}", v),
+        v => panic!("invalid token {:?}", v),
     };
     loop {
         let operator = match tokens.peek() {
             None | Some(Token::Container(Container::Closing)) => break,
             Some(Token::Operator(op)) => op.clone(),
-            v => panic!("invalid token 2 {:?}", v),
+            v => panic!("invalid token {:?}", v),
         };
         let (lbp, rbp) = operator.get_binding_power();
         if lbp < min_bp {
