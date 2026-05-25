@@ -1,11 +1,21 @@
 use std::{fmt::Display, str::FromStr};
 
+use crate::tokens::Token;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Operator {
     Multiply,
     Divide,
     Add,
     Subtract,
+}
+
+impl Operator {
+    pub fn parse(input: &str, index: usize) -> Option<(Token, usize)> {
+        Self::from_str(&input[index..index + 1])
+            .ok()
+            .map(|v| (Token::Operator(v), 1))
+    }
 }
 impl FromStr for Operator {
     type Err = String;

@@ -12,3 +12,10 @@ pub enum Token {
     Container(Container),
     Operator(Operator),
 }
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum TokenType {
+    Number,
+    Container,
+    Operator,
+}

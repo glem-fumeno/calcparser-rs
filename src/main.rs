@@ -1,6 +1,6 @@
+use std::fs::File;
 use std::io::prelude::*;
 use std::time::{Duration, Instant};
-use std::{fs::File};
 
 use crate::{evaluator::evaluate, lexer::tokenize, parser::parse};
 
@@ -10,6 +10,22 @@ mod parser;
 mod tokens;
 
 fn main() -> Result<(), String> {
+    // let mut reader = Reader::from_path("./input.csv").unwrap();
+    // let header: Vec<String> = reader
+    //     .headers()
+    //     .unwrap()
+    //     .iter()
+    //     .map(|v| v.to_owned())
+    //     .collect();
+    // for result in reader.records() {
+    //     let mut record = HashMap::<&str, &str>::new();
+    //     for (column, value) in
+    //         header.iter().zip(result.as_ref().unwrap().iter())
+    //     {
+    //         record.insert(column, value);
+    //     }
+    //     println!("{:?}", record);
+    // }
     let mut contents = String::new();
     {
         let mut file = File::open("input.txt").unwrap();
@@ -19,7 +35,6 @@ fn main() -> Result<(), String> {
     let mut parse_time = Duration::new(0, 0);
     let mut visit_time = Duration::new(0, 0);
     for line in contents.trim().split("\n") {
-
         let v = Instant::now();
         let tokens = tokenize(line)?;
         tokenize_time += v.elapsed();

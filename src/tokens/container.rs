@@ -1,10 +1,18 @@
 use std::{fmt::Display, str::FromStr};
 
+use crate::tokens::Token;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Container {
     Opening,
     Closing,
+}
+impl Container {
+    pub fn parse(input: &str, index: usize) -> Option<(Token, usize)> {
+        Self::from_str(&input[index..index + 1])
+            .ok()
+            .map(|v| (Token::Container(v), 1))
+    }
 }
 impl FromStr for Container {
     type Err = String;
@@ -20,7 +28,7 @@ impl Display for Container {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Opening => write!(f, "("),
-            Self::Closing => write!(f, ")")
+            Self::Closing => write!(f, ")"),
         }
     }
 }
