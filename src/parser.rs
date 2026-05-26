@@ -29,6 +29,7 @@ impl Operation {
 #[derive(Debug)]
 pub enum Expression {
     Operation(Operation),
+    Variable(Variable),
     Number(Number),
 }
 impl Display for Expression {
