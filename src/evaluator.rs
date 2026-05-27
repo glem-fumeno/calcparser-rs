@@ -10,16 +10,23 @@ use crate::{
 
 pub fn evaluate(
     expressions: HashMap<String, String>,
+    cache: &mut HashMap<String, Result<Expression>>,
 ) -> HashMap<String, Result<Decimal>> {
+    for (k, v) in &expressions {
+        if !cache.contains_key(k) {
+            cache.insert(k.clone(), tokenize(v).and_then(parse));
+        }
+    }
     evaluate_many(
         expressions
             .into_iter()
-            .map(|(k, v)| {
+            .map(|(k, _)| {
                 (
+                    cache.get(&k).unwrap(),
                     Variable::new(k, VariableType::Variable),
-                    tokenize(&v).and_then(parse),
                 )
             })
+            .map(|(k, v)| (v, k))
             .collect(),
     )
 }
@@ -35,7 +42,7 @@ pub fn deps<'a>(value: &'a Expression) -> HashSet<&'a Variable> {
 }
 
 pub fn evaluate_many(
-    expressions: HashMap<Variable, Result<Expression>>,
+    expressions: HashMap<Variable, &Result<Expression>>,
 ) -> HashMap<String, Result<Decimal>> {
     let cap = expressions.len();
     let variables = HashSet::from_iter(expressions.keys());

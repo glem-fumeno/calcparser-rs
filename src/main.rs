@@ -23,6 +23,7 @@ fn main() -> Result<()> {
     let mut total_time = Duration::new(0, 0);
     let mut results =
         HashMap::<String, HashMap<String, Result<Decimal>>>::new();
+    let mut cache = HashMap::new();
     for result in reader.records() {
         let mut record = HashMap::<String, String>::new();
         for (column, value) in
@@ -31,8 +32,10 @@ fn main() -> Result<()> {
             record.insert(column.to_owned(), value.to_owned());
         }
         let v = Instant::now();
-        results
-            .insert(record.remove("product_code").unwrap(), evaluate(record));
+        results.insert(
+            record.remove("product_code").unwrap(),
+            evaluate(record, &mut cache),
+        );
         total_time += v.elapsed();
     }
     println!(
