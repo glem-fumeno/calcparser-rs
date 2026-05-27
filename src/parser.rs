@@ -1,10 +1,8 @@
-use std::{
-    fmt::Display, iter::Peekable, slice::Iter
-};
+use std::{fmt::Display, iter::Peekable, slice::Iter};
 
-use crate::tokens::{Container, Number, Operator, Token};
+use crate::tokens::{Container, Number, Operator, Result, Token, Variable};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Operation {
     pub left: Box<Expression>,
     pub operator: Operator,
@@ -26,7 +24,7 @@ impl Operation {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Expression {
     Operation(Operation),
     Variable(Variable),
@@ -37,29 +35,31 @@ impl Display for Expression {
         match self {
             Self::Operation(v) => write!(f, "{}", v),
             Self::Number(v) => write!(f, "{}", v),
+            Self::Variable(v) => write!(f, "{}", v),
         }
     }
 }
 
-pub fn parse(tokens: &Vec<Token>) -> Expression {
+pub fn parse(tokens: Vec<Token>) -> Result<Expression> {
     parse_iter(&mut tokens.iter().peekable(), 0)
 }
 pub fn parse_iter(
     tokens: &mut Peekable<Iter<'_, Token>>,
     min_bp: usize,
-) -> Expression {
+) -> Result<Expression> {
     let mut left = match tokens.next() {
-        Some(Token::Number(v)) => Expression::Number(*v),
+        Some(Token::Number(v)) => Ok(Expression::Number(*v)),
+        Some(Token::Variable(v)) => Ok(Expression::Variable(v.clone())),
         Some(Token::Container(Container::Opening)) => {
             let v = parse_iter(tokens, 0);
-            assert_eq!(
-                tokens.peek(),
-                Some(&&Token::Container(Container::Closing))
-            );
-            v
+            if tokens.peek() != Some(&&Token::Container(Container::Closing)) {
+                Err("must end parentheses")
+            } else {
+                v
+            }
         }
-        v => panic!("invalid token {:?}", v),
-    };
+        _ => Err("invalid token".into()),
+    }?;
     loop {
         let operator = match tokens.peek() {
             None | Some(Token::Container(Container::Closing)) => break,
@@ -71,8 +71,8 @@ pub fn parse_iter(
             break;
         }
         tokens.next();
-        let right = parse_iter(tokens, rbp);
+        let right = parse_iter(tokens, rbp)?;
         left = Expression::Operation(Operation::new(left, operator, right));
     }
-    left
+    Ok(left)
 }

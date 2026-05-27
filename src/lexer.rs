@@ -1,9 +1,13 @@
-use crate::tokens::{Container, Number, Operator, Token, TokenType};
+use crate::tokens::{Container, Number, Operator, Result, Token, TokenType, Variable};
 
-pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
+pub fn tokenize(input: &str) -> Result<Vec<Token>> {
     let mut results: Vec<Token> = vec![];
-    let mut search_chain =
-        vec![TokenType::Number, TokenType::Operator, TokenType::Container];
+    let mut search_chain = vec![
+        TokenType::Number,
+        TokenType::Variable,
+        TokenType::Operator,
+        TokenType::Container,
+    ];
 
     let mut index = 0;
     'outer: while index < input.len() {
@@ -16,6 +20,7 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
                 TokenType::Number => Number::parse(input, index),
                 TokenType::Container => Container::parse(input, index),
                 TokenType::Operator => Operator::parse(input, index),
+                TokenType::Variable => Variable::parse(input, index),
             }) else {
                 continue;
             };
@@ -24,6 +29,7 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
             search_chain = if let TokenType::Operator = token_type {
                 vec![
                     TokenType::Number,
+                    TokenType::Variable,
                     TokenType::Operator,
                     TokenType::Container,
                 ]
@@ -31,6 +37,7 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
                 vec![
                     TokenType::Operator,
                     TokenType::Number,
+                    TokenType::Variable,
                     TokenType::Container,
                 ]
             };

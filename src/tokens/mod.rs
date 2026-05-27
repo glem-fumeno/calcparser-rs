@@ -1,6 +1,6 @@
-use crate::tokens::variable::Variable;
 pub use crate::tokens::{
     container::Container, number::Number, operator::Operator,
+    variable::{Variable, VariableType},
 };
 
 mod container;
@@ -23,3 +23,5 @@ pub enum TokenType {
     Container,
     Operator,
 }
+
+pub type Result<T> = std::result::Result<T, &'static str>;

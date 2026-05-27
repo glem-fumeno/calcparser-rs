@@ -1,4 +1,9 @@
-use std::{fmt::Display, str::FromStr, sync::LazyLock};
+use std::{
+    fmt::Display,
+    hash::{Hash, Hasher},
+    str::FromStr,
+    sync::LazyLock,
+};
 
 use regex::Regex;
 
@@ -19,6 +24,12 @@ pub struct Variable {
     pub variable_type: VariableType,
 }
 
+impl Hash for Variable {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.to_string().hash(state);
+    }
+}
+
 impl Variable {
     pub fn new(name: String, variable_type: VariableType) -> Self {
         Self {
@@ -30,6 +41,7 @@ impl Variable {
     pub fn parse(input: &str, index: usize) -> Option<(Token, usize)> {
         let slice = &input[index..];
         let Some(value) = PATTERN.find(slice) else {
+            println!("{}", slice);
             return None;
         };
         return Some((
@@ -38,12 +50,13 @@ impl Variable {
         ));
     }
 }
+
 impl FromStr for Variable {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.starts_with("$") {
             Ok(Variable::new(
-                s.strip_suffix("${")
+                s.strip_prefix("${")
                     .unwrap()
                     .strip_suffix("}")
                     .unwrap()
@@ -52,7 +65,7 @@ impl FromStr for Variable {
             ))
         } else {
             Ok(Variable::new(
-                s.strip_suffix("#{")
+                s.strip_prefix("#{")
                     .unwrap()
                     .strip_suffix("}")
                     .unwrap()
