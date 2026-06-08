@@ -1,5 +1,6 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap};
 
+use bit_set::BitSet;
 use rust_decimal::Decimal;
 
 use crate::{
@@ -31,13 +32,28 @@ pub fn evaluate(
     )
 }
 
-pub fn deps<'a>(value: &'a Expression) -> HashSet<&'a Variable> {
+pub fn deps<'a>(
+    value: &'a Expression,
+    mapping: &mut HashMap<&'a Variable, usize>,
+    max_idx: &mut usize,
+) -> BitSet {
     match value {
-        Expression::Operation(v) => {
-            deps(&v.left).union(&deps(&v.right)).map(|v| *v).collect()
-        }
-        Expression::Variable(v) => HashSet::from_iter(vec![v]),
-        Expression::Number(_) => HashSet::new(),
+        Expression::Operation(v) => deps(&v.left, mapping, max_idx)
+            .union(&deps(&v.right, mapping, max_idx))
+            .collect(),
+        Expression::Variable(v) => {
+            let mut bs = BitSet::new();
+            if let Some(idx) = mapping.get(v) {
+                bs.insert(*idx);
+                bs
+            } else {
+                *max_idx += 1;
+                mapping.insert(v, *max_idx);
+                bs.insert(*max_idx);
+                bs
+            }
+        },
+        Expression::Number(_) => BitSet::new()
     }
 }
 
@@ -45,17 +61,24 @@ pub fn evaluate_many(
     expressions: HashMap<Variable, &Result<Expression>>,
 ) -> HashMap<String, Result<Decimal>> {
     let cap = expressions.len();
-    let variables = HashSet::from_iter(expressions.keys());
+    let mut variables = BitSet::new();
     let mut results = HashMap::with_capacity(cap);
-    let mut done = HashSet::with_capacity(cap);
+    let mut done = BitSet::new();
+    let mut max_idx = 0;
+    let mut mapping = HashMap::<&Variable, usize>::with_capacity(cap);
+    for variable in expressions.keys() {
+        max_idx += 1;
+        mapping.insert(variable, max_idx);
+        variables.insert(max_idx);
+    }
     let mut todo = Vec::with_capacity(cap);
     for (k, v) in &expressions {
-        let deps = v.as_ref().map(deps).unwrap_or(HashSet::new());
+        let deps = v.as_ref().map(|v| deps(v, &mut mapping, &mut max_idx)).unwrap_or(BitSet::new());
         if deps.is_subset(&variables) {
             todo.push((k, deps));
         } else {
             results.insert(k, Err("variable not found"));
-            done.insert(k);
+            done.insert(*mapping.get(k).unwrap());
         }
     }
     let mut finished = false;
@@ -70,14 +93,17 @@ pub fn evaluate_many(
             finished = false;
             let result = expressions.get(k).unwrap().as_ref().map_err(|v| *v);
             results.insert(k, result.and_then(|v| evaluate_one(v, &results)));
-            done.insert(k);
+            done.insert(*mapping.get(k).unwrap());
         }
         todo = next_todo;
     }
     for (k, _) in todo {
         results.insert(k, Err("variable references itself"));
     }
-    results.iter().map(|(k, v)| (k.name.clone(), *v)).collect()
+    results
+        .into_iter()
+        .map(|(k, v)| (k.name.clone(), v))
+        .collect()
 }
 
 pub fn evaluate_one<'a>(
