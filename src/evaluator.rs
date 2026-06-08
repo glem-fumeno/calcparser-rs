@@ -13,17 +13,17 @@ pub fn evaluate(
     expressions: HashMap<String, String>,
     cache: &mut HashMap<String, Result<Expression>>,
 ) -> HashMap<String, Result<Decimal>> {
-    for (k, v) in &expressions {
-        if !cache.contains_key(k) {
-            cache.insert(k.clone(), tokenize(v).and_then(parse));
+    for (_, v) in &expressions {
+        if !cache.contains_key(v) {
+            cache.insert(v.clone(), tokenize(v).and_then(parse));
         }
     }
     evaluate_many(
         expressions
             .into_iter()
-            .map(|(k, _)| {
+            .map(|(k, v)| {
                 (
-                    cache.get(&k).unwrap(),
+                    cache.get(&v).unwrap(),
                     Variable::new(k, VariableType::Variable),
                 )
             })
