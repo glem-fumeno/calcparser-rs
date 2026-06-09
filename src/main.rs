@@ -5,12 +5,14 @@ use csv::Reader;
 use rust_decimal::Decimal;
 
 use crate::evaluator::evaluate;
+use crate::store::VariableStore;
 use crate::tokens::Result;
 
 mod evaluator;
 mod lexer;
 mod parser;
 mod tokens;
+mod store;
 
 fn main() -> Result<()> {
     let mut reader = Reader::from_path("./input.csv").unwrap();
@@ -24,6 +26,7 @@ fn main() -> Result<()> {
     let mut results =
         HashMap::<String, HashMap<String, Result<Decimal>>>::new();
     let mut cache = HashMap::new();
+    let mut store = VariableStore::default();
     for result in reader.records() {
         let mut record = HashMap::<String, String>::new();
         for (column, value) in
@@ -34,7 +37,7 @@ fn main() -> Result<()> {
         let v = Instant::now();
         results.insert(
             record.remove("product_code").unwrap(),
-            evaluate(record, &mut cache),
+            evaluate(record, &mut cache, &mut store),
         );
         total_time += v.elapsed();
     }

@@ -49,7 +49,7 @@ pub fn parse_iter(
 ) -> Result<Expression> {
     let mut left = match tokens.next() {
         Some(Token::Number(v)) => Ok(Expression::Number(*v)),
-        Some(Token::Variable(v)) => Ok(Expression::Variable(v.clone())),
+        Some(Token::Variable(v)) => Ok(Expression::Variable(*v)),
         Some(Token::Container(Container::Opening)) => {
             let v = parse_iter(tokens, 0);
             if tokens.peek() != Some(&&Token::Container(Container::Closing)) {

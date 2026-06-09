@@ -1,27 +1,19 @@
 use std::{
     fmt::Display,
     hash::{Hash, Hasher},
-    str::FromStr,
     sync::LazyLock,
 };
 
 use regex::Regex;
 
-use crate::tokens::Token;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum VariableType {
-    Variable,
-    Constant,
-}
+use crate::{store::VariableStore, tokens::Token};
 
 static PATTERN: LazyLock<Regex> =
     LazyLock::new(|| Regex::new("^[$#]\\{[a-z0-9_]+\\}").unwrap());
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Variable {
-    pub name: String,
-    pub variable_type: VariableType,
+    pub id: usize,
 }
 
 impl Hash for Variable {
@@ -31,56 +23,30 @@ impl Hash for Variable {
 }
 
 impl Variable {
-    pub fn new(name: String, variable_type: VariableType) -> Self {
+    pub fn new(name: String, store: &mut VariableStore) -> Self {
         Self {
-            name,
-            variable_type,
+            id: store.register(name),
         }
     }
 
-    pub fn parse(input: &str, index: usize) -> Option<(Token, usize)> {
+    pub fn parse(
+        input: &str,
+        index: usize,
+        store: &mut VariableStore,
+    ) -> Option<(Token, usize)> {
         let slice = &input[index..];
         let Some(value) = PATTERN.find(slice) else {
-            println!("{}", slice);
             return None;
         };
         return Some((
-            Token::Variable(Self::from_str(value.as_str()).unwrap()),
+            Token::Variable(Self::new(value.as_str().to_string(), store)),
             value.len(),
         ));
     }
 }
 
-impl FromStr for Variable {
-    type Err = String;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.starts_with("$") {
-            Ok(Variable::new(
-                s.strip_prefix("${")
-                    .unwrap()
-                    .strip_suffix("}")
-                    .unwrap()
-                    .to_owned(),
-                VariableType::Variable,
-            ))
-        } else {
-            Ok(Variable::new(
-                s.strip_prefix("#{")
-                    .unwrap()
-                    .strip_suffix("}")
-                    .unwrap()
-                    .to_owned(),
-                VariableType::Constant,
-            ))
-        }
-    }
-}
-
 impl Display for Variable {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self.variable_type {
-            VariableType::Variable => write!(f, "${{{}}}", self.name),
-            VariableType::Constant => write!(f, "#{{{}}}", self.name),
-        }
+        write!(f, "${{{}}}", self.id)
     }
 }

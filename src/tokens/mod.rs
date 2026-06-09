@@ -1,6 +1,6 @@
 pub use crate::tokens::{
     container::Container, number::Number, operator::Operator,
-    variable::{Variable, VariableType},
+    variable::{Variable},
 };
 
 mod container;
