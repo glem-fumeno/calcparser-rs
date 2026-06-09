@@ -18,7 +18,7 @@ pub struct Variable {
 
 impl Hash for Variable {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.to_string().hash(state);
+        self.id.hash(state);
     }
 }
 

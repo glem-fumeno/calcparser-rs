@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 use csv::Reader;
 use rust_decimal::Decimal;
@@ -11,10 +11,10 @@ use crate::tokens::Result;
 mod evaluator;
 mod lexer;
 mod parser;
-mod tokens;
 mod store;
+mod tokens;
 
-fn main() -> Result<()> {
+fn get_input() -> HashMap<String, HashMap<String, String>> {
     let mut reader = Reader::from_path("./input.csv").unwrap();
     let header: Vec<String> = reader
         .headers()
@@ -22,11 +22,7 @@ fn main() -> Result<()> {
         .iter()
         .map(|v| v.to_owned())
         .collect();
-    let mut total_time = Duration::new(0, 0);
-    let mut results =
-        HashMap::<String, HashMap<String, Result<Decimal>>>::new();
-    let mut cache = HashMap::new();
-    let mut store = VariableStore::default();
+    let mut results = HashMap::<String, HashMap<String, String>>::new();
     for result in reader.records() {
         let mut record = HashMap::<String, String>::new();
         for (column, value) in
@@ -34,13 +30,28 @@ fn main() -> Result<()> {
         {
             record.insert(column.to_owned(), value.to_owned());
         }
-        let v = Instant::now();
-        results.insert(
-            record.remove("product_code").unwrap(),
-            evaluate(record, &mut cache, &mut store),
-        );
-        total_time += v.elapsed();
+        results.insert(record.remove("product_code").unwrap(), record);
     }
+    results
+}
+
+fn get_solution(
+    input: HashMap<String, HashMap<String, String>>,
+) -> HashMap<String, HashMap<String, Result<Decimal>>> {
+    let mut cache = HashMap::new();
+    let mut store = VariableStore::default();
+    let mut results =
+        HashMap::<String, HashMap<String, Result<Decimal>>>::new();
+    for (product_code, record) in input {
+        results.insert(product_code, evaluate(record, &mut cache, &mut store));
+    }
+    results
+}
+
+fn main() -> Result<()> {
+    let input = get_input();
+    let v = Instant::now();
+    let results = get_solution(input);
     println!(
         "sample: {:?}",
         results
@@ -50,7 +61,7 @@ fn main() -> Result<()> {
             .unwrap()
             .unwrap()
     );
-    println!("total: {}", total_time.as_secs_f32());
+    println!("total: {}", v.elapsed().as_secs_f32());
     println!("len: {}", results.len());
     Ok(())
 }

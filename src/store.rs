@@ -3,7 +3,7 @@ use std::collections::HashMap;
 #[derive(Default)]
 pub struct VariableStore {
     max_id: usize,
-    pub mapping: HashMap<String, usize>,
+    mapping: HashMap<String, usize>,
     inverse_mapping: HashMap<usize, String>,
 }
 
